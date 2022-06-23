@@ -7,6 +7,12 @@
 #include "Shader.h"
 #include "Player.h"
 
+#define MAX_LIGHTS			16 
+
+#define POINT_LIGHT			1
+#define SPOT_LIGHT			2
+#define DIRECTIONAL_LIGHT	3
+
 struct LIGHT
 {
 	XMFLOAT4				m_xmf4Ambient;
@@ -28,19 +34,7 @@ struct LIGHTS
 {
 	LIGHT					m_pLights[MAX_LIGHTS];
 	XMFLOAT4				m_xmf4GlobalAmbient;
-};
-
-struct MATERIAL
-{
-	XMFLOAT4				m_xmf4Ambient;
-	XMFLOAT4				m_xmf4Diffuse;
-	XMFLOAT4				m_xmf4Specular; //(r,g,b,a=power)
-	XMFLOAT4				m_xmf4Emissive;
-};
-
-struct MATERIALS
-{
-	MATERIAL				m_pReflections[MAX_SCENE_MATERIALS];
+	int						m_nLights;
 };
 
 class CScene
@@ -52,40 +46,56 @@ public:
 	bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
-	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
-	void ReleaseObjects();
-
-	void BuildLightsAndMaterials();
-
-	ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
-	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
-	void SetGraphicsRootSignature(ID3D12GraphicsCommandList *pd3dCommandList) { pd3dCommandList->SetGraphicsRootSignature(m_pd3dGraphicsRootSignature); }
-
 	virtual void CreateShaderVariables(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void UpdateShaderVariables(ID3D12GraphicsCommandList *pd3dCommandList);
 	virtual void ReleaseShaderVariables();
+
+	void BuildDefaultLightsAndMaterials();
+	void BuildObjects(ID3D12Device *pd3dDevice, ID3D12GraphicsCommandList *pd3dCommandList);
+	void ReleaseObjects();
+
+	ID3D12RootSignature *CreateGraphicsRootSignature(ID3D12Device *pd3dDevice);
+	ID3D12RootSignature *GetGraphicsRootSignature() { return(m_pd3dGraphicsRootSignature); }
 
 	bool ProcessInput(UCHAR *pKeysBuffer);
     void AnimateObjects(float fTimeElapsed);
     void Render(ID3D12GraphicsCommandList *pd3dCommandList, CCamera *pCamera=NULL);
 
 	void ReleaseUploadBuffers();
+	void Collision();
 
 	CPlayer						*m_pPlayer = NULL;
 
-protected:
+public:
 	ID3D12RootSignature			*m_pd3dGraphicsRootSignature = NULL;
 
-	CShader						**m_ppShaders = NULL;
-	int							m_nShaders = 0;
+	CGameObject					**m_ppGameObjects = NULL;
+	CGameObject** m_ppTreeObjects_l = NULL;
+	CGameObject** m_ppTreeObjects_r = NULL;
+	CGameObject** m_ppRoadObjects_l = NULL;
+	CGameObject** m_ppRoadObjects_r = NULL;
+	CGameObject** m_ppLineObjects_l = NULL;
+	CGameObject** m_ppLineObjects_r = NULL;
+	CGameObject** m_ppSideObject = NULL;
+	CGameObject** m_ppSideLineObjects = NULL;
+	CGameObject** m_ppCarObjects = NULL;
+	CGameObject** m_ppRockObjects = NULL;
+	int							m_nGameObjects = 0;
 
-	LIGHTS						*m_pLights = NULL;
+
+	float						*m_pSpeeds = 0;
+	int							*m_pRock = 0;
+
+	LIGHT						*m_pLights = NULL;
+	int							m_nLights = 0;
+
+	XMFLOAT4					m_xmf4GlobalAmbient;
 
 	ID3D12Resource				*m_pd3dcbLights = NULL;
 	LIGHTS						*m_pcbMappedLights = NULL;
 
-	MATERIALS					*m_pMaterials = NULL;
+	float						m_fElapsedTime = 0.0f;
 
-	ID3D12Resource				*m_pd3dcbMaterials = NULL;
-	MATERIAL					*m_pcbMappedMaterials = NULL;
+	float count = 0;
+	int pass[150];
 };
